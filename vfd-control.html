@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VFD Control System - Interactive Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #1e3c72;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .control-panel {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-panel h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slider-group {
+            margin-bottom: 20px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .level-indicator {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .level-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .level-bar {
+            display: flex;
+            gap: 4px;
+            justify-content: space-between;
+        }
+
+        .level-segment {
+            flex: 1;
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            border: 1px solid #999;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .level-segment.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 0 8px rgba(102, 126, 234, 0.6);
+        }
+
+        .level-segment.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 0 8px rgba(245, 87, 108, 0.6);
+        }
+
+        .level-segment.danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            box-shadow: 0 0 8px rgba(255, 107, 107, 0.6);
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid #999;
+        }
+
+        .legend-box.normal {
+            background: #667eea;
+        }
+
+        .legend-box.warning {
+            background: #f5576c;
+        }
+
+        .legend-box.danger {
+            background: #ff6b6b;
+        }
+
+        .vfd-display {
+            background: #000;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .vfd-line {
+            margin: 8px 0;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .vfd-label {
+            color: #888;
+        }
+
+        .vfd-value {
+            font-weight: bold;
+            color: #0f0;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .graphs-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .graph-section {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .graph-section h3 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .stat-unit {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .graphs-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">⚡ VFD Control System Dashboard</div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Process Value (PV)</div>
+                <div class="stat-value" id="pvDisplay">0</div>
+                <div class="stat-unit">%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Setpoint (SP)</div>
+                <div class="stat-value" id="spDisplay">50</div>
+                <div class="stat-unit">%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">VFD Output</div>
+                <div class="stat-value" id="outputDisplay">0</div>
+                <div class="stat-unit">Hz</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Error</div>
+                <div class="stat-value" id="errorDisplay">0</div>
+                <div class="stat-unit">%</div>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h2>📊 Control Inputs</h2>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Setpoint</span>
+                        <span id="spValue">50%</span>
+                    </div>
+                    <input type="range" id="setpointSlider" min="0" max="100" value="50">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Process Disturbance</span>
+                        <span id="disturbanceValue">0%</span>
+                    </div>
+                    <input type="range" id="disturbanceSlider" min="0" max="50" value="0">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>PID Gain (Kp)</span>
+                        <span id="gainValue">1.0</span>
+                    </div>
+                    <input type="range" id="gainSlider" min="0.1" max="3" step="0.1" value="1.0">
+                </div>
+            </div>
+
+            <!-- Level Indicators -->
+            <div class="control-panel">
+                <h2>📈 Level Status</h2>
+                
+                <div class="level-indicator">
+                    <div class="level-label">HHH (Critical High)</div>
+                    <div class="level-bar">
+                        <div class="level-segment" id="hhh-1"></div>
+                        <div class="level-segment" id="hhh-2"></div>
+                        <div class="level-segment" id="hhh-3"></div>
+                    </div>
+                </div>
+
+                <div class="level-indicator">
+                    <div class="level-label">HH (High)</div>
+                    <div class="level-bar">
+                        <div class="level-segment" id="hh-1"></div>
+                        <div class="level-segment" id="hh-2"></div>
+                        <div class="level-segment" id="hh-3"></div>
+                    </div>
+                </div>
+
+                <div class="level-indicator">
+                    <div class="level-label">H (Medium High)</div>
+                    <div class="level-bar">
+                        <div class="level-segment" id="h-1"></div>
+                        <div class="level-segment" id="h-2"></div>
+                        <div class="level-segment" id="h-3"></div>
+                    </div>
+                </div>
+
+                <div class="level-indicator">
+                    <div class="level-label">L (Medium Low)</div>
+                    <div class="level-bar">
+                        <div class="level-segment" id="l-1"></div>
+                        <div class="level-segment" id="l-2"></div>
+                        <div class="level-segment" id="l-3"></div>
+                    </div>
+                </div>
+
+                <div class="level-indicator">
+                    <div class="level-label">LL (Low)</div>
+                    <div class="level-bar">
+                        <div class="level-segment" id="ll-1"></div>
+                        <div class="level-segment" id="ll-2"></div>
+                        <div class="level-segment" id="ll-3"></div>
+                    </div>
+                </div>
+
+                <div class="level-indicator">
+                    <div class="level-label">LLL (Critical Low)</div>
+                    <div class="level-bar">
+                        <div class="level-segment" id="lll-1"></div>
+                        <div class="level-segment" id="lll-2"></div>
+                        <div class="level-segment" id="lll-3"></div>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-box normal"></div>
+                        <span>Normal</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-box warning"></div>
+                        <span>Warning</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-box danger"></div>
+                        <span>Danger</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VFD Display -->
+            <div class="control-panel">
+                <h2>🖥️ VFD Display</h2>
+                <div class="vfd-display">
+                    <div class="vfd-line">
+                        <span class="vfd-label">PV:</span>
+                        <span class="vfd-value" id="vfdPV">0.0 %</span>
+                    </div>
+                    <div class="vfd-line">
+                        <span class="vfd-label">SP:</span>
+                        <span class="vfd-value" id="vfdSP">50.0 %</span>
+                    </div>
+                    <div class="vfd-line">
+                        <span class="vfd-label">ERROR:</span>
+                        <span class="vfd-value" id="vfdError">+50.0 %</span>
+                    </div>
+                    <div class="vfd-line" style="border-top: 1px solid #333; margin-top: 10px; padding-top: 10px;">
+                        <span class="vfd-label">OUTPUT:</span>
+                        <span class="vfd-value" id="vfdOutput">0.0 Hz</span>
+                    </div>
+                    <div class="vfd-line">
+                        <span class="vfd-label">MODE:</span>
+                        <span class="vfd-value" id="vfdMode">AUTO</span>
+                    </div>
+                    <div class="vfd-line">
+                        <span class="vfd-label">STATUS:</span>
+                        <span class="vfd-value" id="vfdStatus">RUNNING</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="graphs-container">
+            <!-- PV vs Setpoint Graph -->
+            <div class="graph-section">
+                <h3>Process Value vs Setpoint</h3>
+                <canvas id="pvSpGraph"></canvas>
+            </div>
+
+            <!-- VFD Output Graph -->
+            <div class="graph-section">
+                <h3>VFD Output Frequency</h3>
+                <canvas id="outputGraph"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const config = {
+            maxDataPoints: 100,
+            updateInterval: 100,
+            hhh: 90,
+            hh: 75,
+            h: 60,
+            l: 40,
+            ll: 25,
+            lll: 10,
+            maxFrequency: 60
+        };
+
+        // State
+        let state = {
+            pv: 0,
+            sp: 50,
+            output: 0,
+            pvHistory: [],
+            spHistory: [],
+            outputHistory: [],
+            timeHistory: []
+        };
+
+        // PID Controller
+        let pidState = {
+            error: 0,
+            integral: 0,
+            lastError: 0,
+            kp: 1.0,
+            ki: 0.1,
+            kd: 0.05
+        };
+
+        // Get elements
+        const setpointSlider = document.getElementById('setpointSlider');
+        const disturbanceSlider = document.getElementById('disturbanceSlider');
+        const gainSlider = document.getElementById('gainSlider');
+        const pvSpGraph = document.getElementById('pvSpGraph');
+        const outputGraph = document.getElementById('outputGraph');
+
+        // Canvas contexts
+        const pvSpCtx = pvSpGraph.getContext('2d');
+        const outputCtx = outputGraph.getContext('2d');
+
+        // Set canvas sizes
+        function resizeCanvases() {
+            const pvSpRect = pvSpGraph.parentElement.getBoundingClientRect();
+            const outputRect = outputGraph.parentElement.getBoundingClientRect();
+            
+            pvSpGraph.width = pvSpRect.width - 50;
+            pvSpGraph.height = 300;
+            
+            outputGraph.width = outputRect.width - 50;
+            outputGraph.height = 300;
+        }
+
+        resizeCanvases();
+        window.addEventListener('resize', resizeCanvases);
+
+        // Update level indicators
+        function updateLevelIndicators(pv) {
+            const levels = [
+                { name: 'hhh', threshold: config.hhh, danger: true },
+                { name: 'hh', threshold: config.hh, warning: true },
+                { name: 'h', threshold: config.h, warning: false },
+                { name: 'l', threshold: config.l, warning: false },
+                { name: 'll', threshold: config.ll, warning: true },
+                { name: 'lll', threshold: config.lll, danger: true }
+            ];
+
+            levels.forEach(level => {
+                for (let i = 1; i <= 3; i++) {
+                    const element = document.getElementById(`${level.name}-${i}`);
+                    element.className = 'level-segment';
+
+                    if (level.name === 'hhh' || level.name === 'hh' || level.name === 'h') {
+                        if (pv >= level.threshold) {
+                            element.classList.add(level.danger ? 'danger' : 'warning');
+                        }
+                    } else {
+                        if (pv <= level.threshold) {
+                            element.classList.add(level.danger ? 'danger' : 'warning');
+                        }
+                    }
+
+                    if (pv >= config.hhh || pv <= config.lll) {
+                        element.classList.add('danger');
+                    } else if ((pv >= config.hh && pv <= config.h) || (pv >= config.l && pv <= config.ll)) {
+                        if (element.classList.length === 1) {
+                            element.classList.add('active');
+                        }
+                    }
+                }
+            });
+        }
+
+        // PID Controller
+        function pidControl(error, kp) {
+            pidState.integral += error * 0.1;
+            pidState.integral = Math.max(-100, Math.min(100, pidState.integral));
+
+            const derivative = (error - pidState.lastError) * 10;
+            pidState.lastError = error;
+
+            const output = kp * error + pidState.ki * pidState.integral + pidState.kd * derivative;
+            return Math.max(-100, Math.min(100, output));
+        }
+
+        // Process simulation
+        function updateProcess() {
+            const sp = parseFloat(setpointSlider.value);
+            const disturbance = parseFloat(disturbanceSlider.value);
+            const kp = parseFloat(gainSlider.value);
+
+            // Calculate error
+            pidState.error = sp - state.pv;
+
+            // PID control
+            const controlSignal = pidControl(pidState.error, kp);
+
+            // First-order process with disturbance
+            const timeConstant = 0.5;
+            state.pv += (controlSignal - state.pv) * 0.08 + (Math.random() - 0.5) * disturbance * 0.1;
+            state.pv = Math.max(-5, Math.min(105, state.pv));
+
+            // VFD output (0-60 Hz, proportional to control signal)
+            state.output = Math.max(0, (controlSignal + 100) / 2 * 0.6);
+
+            state.sp = sp;
+
+            // Update history
+            state.pvHistory.push(state.pv);
+            state.spHistory.push(state.sp);
+            state.outputHistory.push(state.output);
+            state.timeHistory.push(state.timeHistory.length);
+
+            if (state.pvHistory.length > config.maxDataPoints) {
+                state.pvHistory.shift();
+                state.spHistory.shift();
+                state.outputHistory.shift();
+                state.timeHistory.shift();
+            }
+        }
+
+        // Update displays
+        function updateDisplays() {
+            const error = state.sp - state.pv;
+
+            document.getElementById('pvDisplay').textContent = state.pv.toFixed(1);
+            document.getElementById('spDisplay').textContent = state.sp.toFixed(1);
+            document.getElementById('outputDisplay').textContent = state.output.toFixed(1);
+            document.getElementById('errorDisplay').textContent = error.toFixed(1);
+
+            document.getElementById('spValue').textContent = state.sp.toFixed(0) + '%';
+            document.getElementById('disturbanceValue').textContent = disturbanceSlider.value + '%';
+            document.getElementById('gainValue').textContent = gainSlider.value;
+
+            document.getElementById('vfdPV').textContent = state.pv.toFixed(1) + ' %';
+            document.getElementById('vfdSP').textContent = state.sp.toFixed(1) + ' %';
+            document.getElementById('vfdError').textContent = (error > 0 ? '+' : '') + error.toFixed(1) + ' %';
+            document.getElementById('vfdOutput').textContent = state.output.toFixed(1) + ' Hz';
+
+            updateLevelIndicators(state.pv);
+        }
+
+        // Draw PV vs Setpoint Graph
+        function drawPvSpGraph() {
+            const padding = 40;
+            const width = pvSpGraph.width - 2 * padding;
+            const height = pvSpGraph.height - 2 * padding;
+
+            pvSpCtx.clearRect(0, 0, pvSpGraph.width, pvSpGraph.height);
+            pvSpCtx.fillStyle = '#f8f9fa';
+            pvSpCtx.fillRect(0, 0, pvSpGraph.width, pvSpGraph.height);
+
+            // Draw grid
+            pvSpCtx.strokeStyle = '#e0e0e0';
+            pvSpCtx.lineWidth = 1;
+            for (let i = 0; i <= 10; i++) {
+                const y = padding + (height / 10) * i;
+                pvSpCtx.beginPath();
+                pvSpCtx.moveTo(padding, y);
+                pvSpCtx.lineTo(pvSpGraph.width - padding, y);
+                pvSpCtx.stroke();
+            }
+
+            // Draw axes
+            pvSpCtx.strokeStyle = '#333';
+            pvSpCtx.lineWidth = 2;
+            pvSpCtx.beginPath();
+            pvSpCtx.moveTo(padding, padding);
+            pvSpCtx.lineTo(padding, pvSpGraph.height - padding);
+            pvSpCtx.lineTo(pvSpGraph.width - padding, pvSpGraph.height - padding);
+            pvSpCtx.stroke();
+
+            // Draw axis labels
+            pvSpCtx.fillStyle = '#333';
+            pvSpCtx.font = '12px Arial';
+            pvSpCtx.textAlign = 'center';
+            for (let i = 0; i <= 10; i++) {
+                const y = padding + (height / 10) * i;
+                const value = 100 - (i * 10);
+                pvSpCtx.fillText(value, padding - 25, y + 5);
+            }
+
+            pvSpCtx.textAlign = 'right';
+            for (let i = 0; i < state.pvHistory.length; i++) {
+                const x = padding + (width / config.maxDataPoints) * i;
+                if (i % 10 === 0) {
+                    pvSpCtx.fillText(i, x, pvSpGraph.height - padding + 20);
+                }
+            }
+
+            // Draw setpoint line
+            pvSpCtx.strokeStyle = '#f5576c';
+            pvSpCtx.lineWidth = 2;
+            pvSpCtx.setLineDash([5, 5]);
+            pvSpCtx.beginPath();
+            for (let i = 0; i < state.spHistory.length; i++) {
+                const x = padding + (width / config.maxDataPoints) * i;
+                const y = pvSpGraph.height - padding - (state.spHistory[i] / 100) * height;
+                if (i === 0) pvSpCtx.moveTo(x, y);
+                else pvSpCtx.lineTo(x, y);
+            }
+            pvSpCtx.stroke();
+
+            // Draw PV line
+            pvSpCtx.strokeStyle = '#667eea';
+            pvSpCtx.lineWidth = 3;
+            pvSpCtx.setLineDash([]);
+            pvSpCtx.beginPath();
+            for (let i = 0; i < state.pvHistory.length; i++) {
+                const x = padding + (width / config.maxDataPoints) * i;
+                const y = pvSpGraph.height - padding - (state.pvHistory[i] / 100) * height;
+                if (i === 0) pvSpCtx.moveTo(x, y);
+                else pvSpCtx.lineTo(x, y);
+            }
+            pvSpCtx.stroke();
+
+            // Draw legend
+            pvSpCtx.fillStyle = '#667eea';
+            pvSpCtx.fillRect(pvSpGraph.width - 220, 20, 12, 12);
+            pvSpCtx.fillStyle = '#333';
+            pvSpCtx.font = '12px Arial';
+            pvSpCtx.textAlign = 'left';
+            pvSpCtx.fillText('Process Value (PV)', pvSpGraph.width - 200, 30);
+
+            pvSpCtx.fillStyle = '#f5576c';
+            pvSpCtx.fillRect(pvSpGraph.width - 220, 40, 12, 12);
+            pvSpCtx.fillText('Setpoint (SP)', pvSpGraph.width - 200, 50);
+        }
+
+        // Draw Output Graph
+        function drawOutputGraph() {
+            const padding = 40;
+            const width = outputGraph.width - 2 * padding;
+            const height = outputGraph.height - 2 * padding;
+
+            outputCtx.clearRect(0, 0, outputGraph.width, outputGraph.height);
+            outputCtx.fillStyle = '#f8f9fa';
+            outputCtx.fillRect(0, 0, outputGraph.width, outputGraph.height);
+
+            // Draw grid
+            outputCtx.strokeStyle = '#e0e0e0';
+            outputCtx.lineWidth = 1;
+            for (let i = 0; i <= 10; i++) {
+                const y = padding + (height / 10) * i;
+                outputCtx.beginPath();
+                outputCtx.moveTo(padding, y);
+                outputCtx.lineTo(outputGraph.width - padding, y);
+                outputCtx.stroke();
+            }
+
+            // Draw axes
+            outputCtx.strokeStyle = '#333';
+            outputCtx.lineWidth = 2;
+            outputCtx.beginPath();
+            outputCtx.moveTo(padding, padding);
+            outputCtx.lineTo(padding, outputGraph.height - padding);
+            outputCtx.lineTo(outputGraph.width - padding, outputGraph.height - padding);
+            outputCtx.stroke();
+
+            // Draw axis labels
+            outputCtx.fillStyle = '#333';
+            outputCtx.font = '12px Arial';
+            outputCtx.textAlign = 'center';
+            for (let i = 0; i <= 10; i++) {
+                const y = padding + (height / 10) * i;
+                const value = 60 - (i * 6);
+                outputCtx.fillText(value, padding - 25, y + 5);
+            }
+
+            outputCtx.textAlign = 'right';
+            for (let i = 0; i < state.outputHistory.length; i++) {
+                const x = padding + (width / config.maxDataPoints) * i;
+                if (i % 10 === 0) {
+                    outputCtx.fillText(i, x, outputGraph.height - padding + 20);
+                }
+            }
+
+            // Draw output line with gradient
+            const gradient = outputCtx.createLinearGradient(padding, padding, padding, outputGraph.height - padding);
+            gradient.addColorStop(0, 'rgba(102, 126, 234, 0.3)');
+            gradient.addColorStop(1, 'rgba(102, 126, 234, 0.05)');
+
+            outputCtx.strokeStyle = '#667eea';
+            outputCtx.lineWidth = 3;
+            outputCtx.beginPath();
+            for (let i = 0; i < state.outputHistory.length; i++) {
+                const x = padding + (width / config.maxDataPoints) * i;
+                const y = outputGraph.height - padding - (state.outputHistory[i] / 60) * height;
+                if (i === 0) outputCtx.moveTo(x, y);
+                else outputCtx.lineTo(x, y);
+            }
+            outputCtx.stroke();
+
+            // Draw fill area
+            outputCtx.lineTo(outputGraph.width - padding, outputGraph.height - padding);
+            outputCtx.lineTo(padding, outputGraph.height - padding);
+            outputCtx.fillStyle = gradient;
+            outputCtx.fill();
+
+            // Draw legend
+            outputCtx.fillStyle = '#667eea';
+            outputCtx.fillRect(outputGraph.width - 220, 20, 12, 12);
+            outputCtx.fillStyle = '#333';
+            outputCtx.font = '12px Arial';
+            outputCtx.textAlign = 'left';
+            outputCtx.fillText('VFD Output (Hz)', outputGraph.width - 200, 30);
+        }
+
+        // Animation loop
+        function animate() {
+            updateProcess();
+            updateDisplays();
+            drawPvSpGraph();
+            drawOutputGraph();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

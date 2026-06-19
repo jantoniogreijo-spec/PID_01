@@ -774,8 +774,8 @@
             // PID control
             const controlSignal = pidControl(pidState.error, kp);
 
-            // VFD output (0-60 Hz, proportional to control signal)
-            state.output = Math.max(0, (controlSignal + 100) / 2 * 0.6);
+            // VFD output (0-50 Hz, proportional to control signal)
+            state.output = Math.max(0, (controlSignal + 100) / 2 * 0.5);
 
             // Update history
             state.pvHistory.push(state.pv);
@@ -976,7 +976,7 @@
             outputCtx.textAlign = 'center';
             for (let i = 0; i <= 10; i++) {
                 const y = padding + (height / 10) * i;
-                const value = 60 - (i * 6);
+                const value = 50 - (i * 5);
                 outputCtx.fillText(value, padding - 20, y + 4);
             }
 
@@ -1012,7 +1012,7 @@
             outputCtx.beginPath();
             for (let i = 0; i < state.outputHistory.length; i++) {
                 const x = padding + (width / config.maxDataPoints) * i;
-                const y = outputGraph.height - padding - (state.outputHistory[i] / 60) * height;
+                const y = outputGraph.height - padding - (state.outputHistory[i] / 50) * height;
                 if (i === 0) outputCtx.moveTo(x, y);
                 else outputCtx.lineTo(x, y);
             }
